@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Post Message</title>
+  </head>
+  <body>
+    <h1>Redis Lists - TImeline</h1>
+    <form id="messageForm">
+      <label for="username">Username:</label>
+      <input type="text" id="username" name="username" required /><br /><br />
+      <label for="message">Message:</label><br />
+      <textarea
+        id="message"
+        name="message"
+        rows="4"
+        cols="50"
+        required
+      ></textarea
+      ><br /><br />
+      <input type="submit" value="Submit" />
+    </form>
+
+    <h2>Messages</h2>
+    <div id="messages"></div>
+
+    <script>
+      document
+        .getElementById("messageForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+          const username = document.getElementById("username").value;
+          const message = document.getElementById("message").value;
+
+          const response = await fetch("/message", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username, message }),
+          });
+
+          const result = await response.json();
+          document.getElementById("messages").innerHTML = `
+                <p><strong>Username:</strong> ${result.username}</p>
+                <p><strong>Message:</strong> ${result.message}</p>
+            `;
+
+          loadMessages();
+        });
+
+      async function loadMessages() {
+        const response = await fetch("/message");
+        const messages = await response.json();
+        console.log(messages);
+
+        const messagesDiv = document.getElementById("messages");
+        messagesDiv.innerHTML = messages
+          .map(
+            (msg) => `
+                    <div>
+                        <p><strong>${msg.username}</strong> (${new Date(
+              msg.timestamp
+            ).toLocaleString()}): ${msg.message}</p>
+                    </div>
+                `
+          )
+          .join("");
+      }
+      window.onload = loadMessages;
+    </script>
+  </body>
+</html>
