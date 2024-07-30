@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Post Message</title>
+    <style>
+      .button-group button {
+        margin-right: 10px;
+      }
+      .button-group button.active {
+        background-color: #dcdcdc;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Redis Sorts - Voting</h1>
+    <form id="messageForm">
+      <label for="username">Your Name:</label>
+      <input type="text" id="username" name="username" required /><br /><br />
+
+      <div class="button-group">
+        <button type="button" data="Candidate 1">Candidate 1</button>
+        <button type="button" data="Candidate 2">Candidate 2</button>
+        <button type="button" data="Candidate 3">Candidate 3</button>
+        <button type="button" data="Candidate 4">Candidate 4</button>
+      </div>
+
+      <input type="hidden" id="candidate" name="candidate" required />
+    </form>
+
+    <div id="response"></div>
+    <h2>Result!</h2>
+    <div id="result"></div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const usernameInput = document.getElementById("username");
+        const candidateInput = document.getElementById("candidate");
+        const responseDiv = document.getElementById("response");
+
+        // Add click event listeners to all buttons
+        document.querySelectorAll(".button-group button").forEach((button) => {
+          button.addEventListener("click", async () => {
+            // Set the selected message in the hidden input
+            candidateInput.value = button.getAttribute("data");
+
+            // Optionally, set the active class for visual feedback
+            document
+              .querySelectorAll(".button-group button")
+              .forEach((btn) => btn.classList.remove("active"));
+            button.classList.add("active");
+
+            const username = usernameInput.value;
+            const candidate = candidateInput.value;
+
+            if (!username || !candidate) {
+              alert(
+                "Please enter your name and select a candidate before submitting."
+              );
+              return;
+            }
+
+            try {
+              // Send the selected message and username to the server
+              const response = await fetch("/vote", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ username, candidate }),
+              });
+
+              const result = await response.json();
+
+              loadMessages();
+            } catch (error) {
+              console.error("Error posting message:", error);
+            }
+          });
+        });
+
+        async function loadMessages() {
+          try {
+            const response = await fetch("/vote");
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            const result = await response.json();
+            const resultDiv = document.getElementById("result");
+            resultDiv.innerHTML = result
+              .map(
+                (msg) => `
+                            <div>
+                                <p><strong>${msg.username}</strong> : ${msg.cnt}</p>
+                            </div>
+                        `
+              )
+              .join("");
+          } catch (error) {
+            console.error("Error loading result:", error);
+          }
+        }
+
+        // Load result on page load
+        loadMessages();
+      });
+    </script>
+  </body>
+</html>
